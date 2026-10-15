@@ -1,0 +1,26 @@
+/* Athena — VILT's in-house Redmine theme. Mobile (<=899px) colour delta.
+ *
+ * Copyright (C) 2026 VILT Group. Written in-house; contains no third-party CSS.
+ *
+ * Same mechanism as application.css: shipping a file with this basename
+ * replaces core's copy, so it's re-imported here and this is only a delta.
+ * Needed as a separate file (not more rules in application.css) because
+ * these three colours are inside core's own @media screen and
+ * (max-width: 899px) block, in responsive.css, not application.css — an
+ * unguarded override in application.css would apply at every width, and
+ * would in any case lose to this file (responsive.css loads after
+ * application.css in the layout's stylesheet_link_tag list).
+ */
+
+@import url(/responsive.css);
+
+@media screen and (max-width: 899px) {
+  /* Was #628db6 — the fixed mobile header bar. */
+  #header { background-color: var(--athena-navbar-bg); }
+
+  /* Was #3e5b76 — the slide-out flyout menu. */
+  .flyout-menu { background-color: var(--athena-header); }
+
+  /* Was #628db6 — the flyout menu's section headings. */
+  .flyout-menu h3 { background-color: var(--athena-navbar-bg); }
+}

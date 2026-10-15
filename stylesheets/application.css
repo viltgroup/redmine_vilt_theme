@@ -1,0 +1,422 @@
+/* Athena — VILT's in-house Redmine theme.
+ *
+ * Copyright (C) 2026 VILT Group. Written in-house; contains no third-party CSS.
+ *
+ * This file REPLACES core's application.css — `stylesheet_link_tag` picks the
+ * theme's copy whenever the theme ships a file of the same basename
+ * (app/helpers/application_helper.rb, `stylesheet_link_tag`). The @import below
+ * pulls core back in; everything after it is a deliberate delta on Default.
+ *
+ * ⛔ Never remove the @import. Without it you lose all of core's styling AND
+ *    core's own @import of open-color.css, which leaves every --oc-*
+ *    undefined. Rules using an undefined custom property are invalid at
+ *    computed-value time and reset to initial, silently — that is how Circle
+ *    3.1.0 blanked the Gantt bars. Check with:
+ *      grep -c '@import' stylesheets/application.css   # must be >= 1
+ */
+
+@import url(/application.css);
+
+/* ---------------------------------------------------------------------------
+   Brand tokens.
+   ------------------------------------------------------------------------ */
+:root {
+  --athena-topbar-bg: #1f212b;    /* thin bar at the very top */
+  --athena-topbar-text: #636678;
+  --athena-navbar-bg: #363945;    /* #main-menu (Overview / Activity / Issues / …) */
+  --athena-navbar-text: #8f93a4;  /* unselected, unhovered nav-item text */
+  --athena-header: #2b2e3a;       /* header bar bg; also submit-button/checkbox hover */
+  --athena-link: #50566d;
+  --athena-accent: #e90062;       /* link hover, buttons, checkboxes, current-page, current-nav marker */
+  --athena-icon: #1f212b;         /* a.icon / a.icon-only / span.icon-actions svg */
+  --athena-login-panel: #e2e2e2;
+  --athena-disabled: #caccce;
+  --athena-ticket-bg: #fef9e9;
+
+  /* Core's own hook: the bar under the selected main-menu item. */
+  --color-current-marker: var(--athena-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Thin bar at the very top (nav.top-menu: Sign in / Register / account menu)
+   ------------------------------------------------------------------------ */
+nav.top-menu { background: var(--athena-topbar-bg); }
+
+.top-menu__links a, .top-menu__links a:link, .top-menu__links a:visited,
+#account .dropdown-trigger {
+  color: var(--athena-topbar-text);
+}
+/* More breathing room between Home / My page / Projects / etc. Core: 6px.
+   Core's rule groups in a.home:link and a.home:visited — every real link
+   matches one of those, and :link/:visited each add a pseudo-class's worth
+   of specificity, so the group's real specificity is (0,2,1), not (0,1,1).
+   A plain `.top-menu__links a` here was silently losing regardless of
+   coming later in the cascade. Matched here instead of relying on order. */
+.top-menu__links a, .top-menu__links a:link, .top-menu__links a:visited {
+  padding-inline: 20px;
+}
+
+.top-menu__links a:hover, .top-menu__links a:focus, .top-menu__links a:active,
+#account .dropdown-trigger:hover, #account .dropdown-trigger:focus, #account .dropdown-trigger:active {
+  color: var(--oc-white);
+  background-color: transparent; /* core's default adds a light overlay here; no background change wanted */
+}
+
+.top-menu__links svg.icon-svg, #account .dropdown-trigger .icon-svg {
+  stroke: var(--athena-topbar-text);
+}
+.top-menu__links a:hover svg.icon-svg, #account .dropdown-trigger:hover .icon-svg {
+  stroke: var(--oc-white);
+}
+
+/* ---------------------------------------------------------------------------
+   Header bar (logo + project/page title)
+
+   Height: min-block-size below is a MINIMUM, not padding — padding sits
+   outside the flex content box, so align-items:center would have a fixed-
+   height box with no slack to center anything in (an earlier attempt at
+   this got that wrong: content ended up flush against the navbar with all
+   the empty space stranded above it). min-block-size instead gives the flex
+   content box real, adjustable room, so align-items:center actually has
+   something to center within, and it still grows gracefully if content
+   (e.g. the stacked #quick-search, below) ever needs more room than this.
+   ------------------------------------------------------------------------ */
+#header {
+  background: var(--athena-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 90px;
+  padding-block: 0;
+}
+/* Markup order is quick-search then h1 (main-menu is position:absolute, out
+   of flow, and doesn't participate here). Moving h1 to the visual start
+   keeps the logo/title on the left (right, in RTL) without touching
+   #quick-search's own float, which flex ignores anyway. */
+/* align-items: center on #header centers each item within the full height,
+   which was mathematically right but still read as "too high" for the
+   title — nudged down a few px off dead-center with an asymmetric margin.
+   #quick-search, sharing that exact same treatment, was rendering
+   noticeably low instead (screenshot, 2026-09-23) — a nested flex container
+   (#quick-search is itself display:flex for its own two stacked rows, see
+   below) as a flex ITEM of #header apparently doesn't take align-self the
+   same way a plain element like h1 does here. margin-block: auto is the
+   more robust way to center a flex item — it's a defined, spec-guaranteed
+   mechanism (auto margins absorb all free space on that axis) rather than
+   relying on align-self, so it gets its own treatment instead of matching
+   h1's. */
+#header h1 { order: -1; min-inline-size: 0; flex-shrink: 1; align-self: center; margin-block-start: 10px; }
+#quick-search { flex-shrink: 0; margin-block: auto; }
+
+/* Reserved space for the navbar (see #main-menu below), added ON TOP of the
+   min-block-size content area above — not part of it, so it never affects
+   the centering above. Must always equal the navbar's own total height. */
+body.has-main-menu #header { padding-block-end: 48px; }
+
+/* A theme logo is not a Redmine concept — only CSS on #header h1. Same file
+   and sizing athena-pink uses for it (images/athena-logo.svg): a white
+   square with the mark knocked out in the accent colour, baked into the
+   svg's own canvas alongside transparent margin, which is why the visible
+   mark renders smaller than the 40px box it sits in. */
+#header h1 {
+  background: url(../images/athena-logo.svg) no-repeat 20px 50%;
+  background-size: auto 40px;
+  padding-inline-start: 90px;
+  text-transform: uppercase; /* inherited by .breadcrumbs/.current-project inside it too */
+  letter-spacing: 0.1em;
+}
+/* Core: 0.8rem. 20% down. */
+#header h1 .breadcrumbs { font-size: 0.64rem; }
+[dir="rtl"] #header h1 {
+  background-position: calc(100% - 20px) 50%;
+  padding-inline-start: 0;
+  padding-inline-end: 90px;
+}
+
+/* ---------------------------------------------------------------------------
+   The search box + project jump box, stacked instead of side by side, both
+   spanning project-jump's own pre-existing width (200px, #project-jump.drdn
+   in core) rather than each keeping its own natural width.
+
+   Both rows get that 200px explicitly, rather than depending on
+   align-items: stretch to hand it to them — the previous attempt relied on
+   stretch alone and the two rows didn't end up matching in practice.
+   ------------------------------------------------------------------------ */
+#quick-search {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  inline-size: 200px;
+}
+#quick-search form {
+  display: flex;
+  align-items: center;
+  inline-size: 200px;
+  box-sizing: border-box;
+}
+#quick-search #q {
+  flex: 1;
+  inline-size: auto; /* was a fixed 130px; stretch to fill whatever the label leaves */
+  min-inline-size: 0;
+}
+#quick-search #project-jump.drdn {
+  inline-size: 200px; /* was a fixed 200px already, but stated explicitly here for parity with the row above */
+  box-sizing: border-box;
+  float: none; /* core's float:inline-start (further down) is redundant here — floats don't apply to flex items anyway */
+}
+
+/* ---------------------------------------------------------------------------
+   Navigation bar (#main-menu: Overview / Activity / Issues / …)
+
+   Height: 42px. Kept as 2px top padding (still 0 bottom — see below)
+   + 40px content.
+
+   The open item keeps the bar's own background (no highlight), text goes
+   white, and the marker line beneath it is --color-current-marker, at twice
+   the original thickness (4px), flush with the bar's true bottom edge.
+   Unselected, unhovered items are --athena-navbar-text; hover keeps the
+   bar's own background and turns the text white.
+   ------------------------------------------------------------------------ */
+#main-menu { background: var(--athena-navbar-bg); }
+
+/* Core's own bottom padding was a gap an inset box-shadow on a tab can never
+   cross — inset shadows clip to the element's own box, they can't bleed into
+   a parent's padding. Moving that padding to the top and stretching each tab
+   (align-items: stretch, was center) to the bar's full height puts a tab's
+   bottom edge exactly on the bar's true bottom edge, so the marker below can
+   be flush without any pseudo-element tricks. */
+#main-menu { padding-block: 2px 0; }
+#main-menu ul { min-block-size: 46px; align-items: stretch; } /* 48px total: 2px top padding + 46px */
+
+#main-menu li a {
+  color: var(--athena-navbar-text);
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding-inline: 15px; /* core: 11px */
+}
+#main-menu li a:not(.new-object) {
+  block-size: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+/* The "+" new-object pill isn't meant to fill the bar's height — keep it
+   centered the way core does, opting out of the stretch above. */
+#main-menu li a.new-object { align-self: center; }
+
+#main-menu li a:hover {
+  background-color: transparent; /* no background change on hover */
+  color: var(--oc-white);
+}
+
+#main-menu li a.selected, #main-menu li a.selected:hover {
+  background-color: transparent;
+  color: var(--oc-white);
+  box-shadow: inset 0 -5px 0 var(--color-current-marker);
+}
+
+/* ---------------------------------------------------------------------------
+   Links
+   ------------------------------------------------------------------------ */
+/* 500, not 700 — enough to read as distinct from body text without looking
+   bold. Inter is a variable font (see the @font-face rules below) so 500
+   renders as its own real weight, not just a fake browser-synthesized one. */
+a, a:link, a:visited { color: var(--athena-link); font-weight: 500; }
+a:hover, a:active { color: var(--athena-accent); }
+
+/* ---------------------------------------------------------------------------
+   Submit buttons
+   White text added for contrast — core's buttons were white-background/
+   dark-text and had no text-color rule of their own to inherit. Border
+   removed — core's generic `input, select, textarea, button { border: 1px
+   solid var(--oc-gray-4); }` was giving every button a flat grey outline.
+   Text styling matches the navbar's (font-family inherits Inter already,
+   but stated explicitly since some browsers reset button font-family to
+   the system UI font under -webkit-appearance:button), one step smaller.
+   Padding roomier than core's base input/button padding-block:4px
+   padding-inline:7px.
+   ------------------------------------------------------------------------ */
+input[type="submit"], button[type="submit"] {
+  background-color: var(--athena-accent);
+  color: var(--oc-white);
+  border: none;
+  font-family: var(--fonts-main);
+  letter-spacing: 0.1em;
+  font-size: 0.7rem; /* navbar tabs are 0.8rem */
+  padding-block: 8px;
+  padding-inline: 18px;
+}
+input[type="submit"]:hover, button[type="submit"]:hover {
+  background-color: var(--athena-header);
+}
+/* Core's own input:disabled rule (background: --oc-gray-2) loses to the rule
+   above (attribute selector beats a bare :disabled pseudo-class), so a
+   disabled submit button was rendering the accent pink, just visually faded
+   by the browser's native disabled treatment (~#ec619d) rather than an
+   actual colour anyone chose. This is the actual chosen colour. */
+input[type="submit"]:disabled, button[type="submit"]:disabled {
+  background-color: var(--athena-disabled);
+}
+/* The SSO button's background is set inline by redmine_oauth from the
+   provider's button_color (white), so the white text above vanished on it. */
+#oauth-form-buttons button[type="submit"] { color: #000; }
+
+/* ---------------------------------------------------------------------------
+   Selected checkboxes
+   accent-color has no guaranteed native hover state — the :hover rule is
+   honoured by Chromium, not by every engine.
+   ------------------------------------------------------------------------ */
+input[type="checkbox"] { accent-color: var(--athena-accent); }
+input[type="checkbox"]:hover { accent-color: var(--athena-header); }
+
+/* ---------------------------------------------------------------------------
+   Login panel
+   ------------------------------------------------------------------------ */
+#login-form { background-color: var(--athena-login-panel); }
+
+/* ---------------------------------------------------------------------------
+   Current page in pagination
+   ------------------------------------------------------------------------ */
+.pagination ul.pages li.current { background-color: var(--athena-accent); }
+
+/* Hovering a page number/button currently turns the text core's blue
+   (.pagination ul.pages li.page a:hover/:active, specificity (0,3,1)) even
+   though the general link-hover rule above already says accent — this
+   pagination-specific rule is more specific and was winning. */
+.pagination ul.pages li.page a:hover,
+.pagination ul.pages li.page a:active {
+  color: var(--athena-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Icons (s18 icon-svg, and any other size) rendered inside a plain a.icon /
+   a.icon-only / span.icon-actions wrapper — core makes these blue
+   (var(--oc-blue-9), stroke or fill depending on whether the icon is the
+   outline or "filled" variant). Semantic states that force their own colour
+   are excluded so they keep meaning their own thing: .icon-ok (green),
+   .icon-error (red), .icon-warning (yellow), .icon-checked (green) — all of
+   those are outline-only in core today, but excluding them from the filled
+   rule too costs nothing and covers core adding one later.
+   ------------------------------------------------------------------------ */
+a.icon:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked) .icon-svg,
+a.icon-only:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked) .icon-svg,
+span.icon-actions:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked) .icon-svg {
+  stroke: var(--athena-icon);
+}
+a.icon:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked) .icon-svg-filled,
+a.icon-only:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked) .icon-svg-filled {
+  fill: var(--athena-icon);
+}
+
+/* ---------------------------------------------------------------------------
+   Administration sidebar (#sidebar, rendered on the right of #content):
+   core highlights the current section (e.g. Settings, class
+   "icon icon-settings settings selected") with a light blue background.
+   Spec: leave the background unchanged.
+   ------------------------------------------------------------------------ */
+#sidebar a.selected { background-color: transparent; }
+
+/* ---------------------------------------------------------------------------
+   Dropdowns and calendars: wherever core uses a blue for the highlighted/
+   active/hovered item, use the link colour instead. Scoped to the dropdown
+   and date-picker widgets specifically (project-jump, contextual-menu
+   dropdowns, the @mention autocomplete, the jQuery UI date picker) — not
+   every unrelated use of Open Color's blue elsewhere (badges, avatars,
+   :target anchor highlights).
+   ------------------------------------------------------------------------ */
+.contextual .drdn-items > a:hover, .journal-actions .drdn-items > a:hover {
+  color: var(--athena-link);
+  border-color: var(--athena-link);
+}
+#project-jump .drdn-items > a:hover {
+  background-color: var(--athena-link);
+}
+.drdn-content .autocomplete:focus { border-color: var(--athena-link); }
+.tribute-container li.highlight { background-color: var(--athena-link); }
+
+/* jQuery UI's date picker (and its autocomplete-menu keyboard highlight)
+   ships with the library's own default theme, hardcoded hex, not Open
+   Color — the selected/active date is #007fff/#003eff, not a --oc-* token. */
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+  border-color: var(--athena-link);
+  background: var(--athena-link);
+}
+.ui-visual-focus { box-shadow: 0 0 3px 1px var(--athena-link); }
+
+/* ---------------------------------------------------------------------------
+   Ticket (issue) background.
+   ------------------------------------------------------------------------ */
+div.issue { background: var(--athena-ticket-bg); }
+
+/* ---------------------------------------------------------------------------
+   Fonts: Inter (body) and Manrope (headings), self-hosted the same way core
+   self-hosts Noto Sans (woff2 in the theme, no external request) — a theme
+   with no dependencies shouldn't reach out to fonts.googleapis.com at
+   runtime. Both are variable fonts; Google serves one file per style
+   (normal/italic) that covers the whole weight axis, so 400 and 700 below
+   share a src and just declare the range, rather than shipping two files
+   that happen to be identical. latin-ext is included alongside latin for
+   Portuguese diacritics (ã, ç, õ, …). OFL license texts are in doc/.
+   ------------------------------------------------------------------------ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Inter-normal-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Inter-normal-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Inter-italic-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Inter-italic-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Manrope-normal-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/Manrope-normal-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Core exposes exactly one hook for this: --fonts-main, used for body text
+   and (via inheritance) most headings. Redefining it retints body copy to
+   Inter without touching every selector that reads it. Headings (h1-h6,
+   and the handful of core rules that set font-family directly rather than
+   through the variable) get Manrope explicitly, since core has no separate
+   "heading font" variable. */
+:root { --fonts-main: 'Inter', "Noto Sans", sans-serif; }
+
+h1, h2, h3, h4, h5, h6,
+#header h1, .wiki h1, .wiki h2, .wiki h3, .wiki h4, .wiki h5, .wiki h6 {
+  font-family: 'Manrope', 'Inter', "Noto Sans", sans-serif;
+}
