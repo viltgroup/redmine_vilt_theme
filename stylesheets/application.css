@@ -32,6 +32,9 @@
   --athena-login-panel: #e2e2e2;
   --athena-disabled: #caccce;
   --athena-ticket-bg: #fef9e9;
+  --athena-priority-urgent: #ee8fb7;  /* issue-list row backgrounds, see "Issue lists" */
+  --athena-priority-high: #f1c9da;
+  --athena-priority-low: #e0e5fa;
 
   /* Core's own hook: the bar under the selected main-menu item. */
   --color-current-marker: var(--athena-accent);
@@ -351,6 +354,56 @@ a.icon-only:not(.icon-ok):not(.icon-error):not(.icon-warning):not(.icon-checked)
    Ticket (issue) background.
    ------------------------------------------------------------------------ */
 div.issue { background: var(--athena-ticket-bg); }
+
+/* ---------------------------------------------------------------------------
+   Issue lists: row background by priority. Covers every list built from
+   issues/_list (project and global issue lists, My page issue blocks).
+
+   Each row carries its priority's position_name as a class (Issue#css_classes
+   → IssuePriority#css_classes: priority-lowest, priority-low<n>,
+   priority-default, priority-high<n>, priority-highest). Keyed on those, not
+   on priority-<id>, so renumbering or renaming priorities doesn't break it.
+   With Athena's four (Low, Normal, High, Urgent) they are lowest, default,
+   high2 and highest. Normal (default) is left to core's striping.
+
+   [class*=] also matches priority-highest for "high", so the highest rules
+   come last and win on order at equal specificity.
+
+   Text: black on High, black and bold on Urgent, links included, while the
+   row is not hovered.
+
+   Hover: any row, whatever its priority, goes --athena-navbar-bg with white
+   text, links and icons (core's is yellow, .odd:hover/.even:hover). The
+   hover rules have the same specificity as the priority backgrounds,
+   (0,4,2), and come after them, so they win on order. The icon rule needs
+   the a.icon… part to outrank the generic icon colour in "Icons" (0,6,1).
+   ------------------------------------------------------------------------ */
+table.list.issues tr.issue[class*="priority-low"]  { background-color: var(--athena-priority-low); }
+table.list.issues tr.issue[class*="priority-high"] { background-color: var(--athena-priority-high); }
+table.list.issues tr.issue.priority-highest        { background-color: var(--athena-priority-urgent); }
+
+table.list.issues tr.issue[class*="priority-high"]:not(:hover),
+table.list.issues tr.issue[class*="priority-high"]:not(:hover) a { color: #000; }
+table.list.issues tr.issue.priority-highest,
+table.list.issues tr.issue.priority-highest a { font-weight: bold; }
+
+table.list.issues tr.issue:hover { background-color: var(--athena-navbar-bg); }
+table.list.issues tr.issue:hover,
+table.list.issues tr.issue:hover a { color: var(--oc-white); }
+table.list.issues tr.issue:hover a.icon .icon-svg,
+table.list.issues tr.issue:hover a.icon-only .icon-svg,
+table.list.issues tr.issue:hover span.icon-actions .icon-svg { stroke: var(--oc-white); }
+table.list.issues tr.issue:hover a.icon .icon-svg-filled,
+table.list.issues tr.issue:hover a.icon-only .icon-svg-filled { fill: var(--oc-white); }
+
+/* Selected rows (checkbox or right-click): core paints them bright blue with
+   white text, all !important, from context_menu.css — which loads AFTER this
+   file, so matching core's selectors would lose on order. These are more
+   specific instead. Core's white text (also !important) is kept as is, and
+   beats the black priority text above. Applies to every list with a context
+   menu (issues, time entries), not only issues. */
+table.list tr.context-menu-selection,
+table.list tr.context-menu-selection:hover { background-color: var(--athena-navbar-bg) !important; } /* same as the hover colour above */
 
 /* ---------------------------------------------------------------------------
    Fonts: Inter (body) and Manrope (headings), self-hosted the same way core
