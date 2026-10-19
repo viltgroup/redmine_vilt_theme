@@ -24,7 +24,7 @@
   --athena-topbar-bg: #1f212b;    /* thin bar at the very top */
   --athena-topbar-text: #636678;
   --athena-navbar-bg: #363945;    /* #main-menu (Overview / Activity / Issues / …) */
-  --athena-navbar-text: #8f93a4;  /* unselected, unhovered nav-item text */
+  --athena-navbar-text: #bcc0d4;  /* unselected, unhovered nav-item text */
   --athena-header: #2b2e3a;       /* header bar bg; also submit-button/checkbox hover */
   --athena-link: #50566d;
   --athena-accent: #e90062;       /* link hover, buttons, checkboxes, current-page, current-nav marker */
@@ -51,9 +51,14 @@ nav.top-menu { background: var(--athena-topbar-bg); }
    matches one of those, and :link/:visited each add a pseudo-class's worth
    of specificity, so the group's real specificity is (0,2,1), not (0,1,1).
    A plain `.top-menu__links a` here was silently losing regardless of
-   coming later in the cascade. Matched here instead of relying on order. */
+   coming later in the cascade. Matched here instead of relying on order.
+   Same font treatment as the navbar items (#main-menu li a, below): weight
+   500 and 0.1em letter spacing. Colour and size stay the top bar's own. The
+   family is Inter for both already, via --fonts-main. */
 .top-menu__links a, .top-menu__links a:link, .top-menu__links a:visited {
   padding-inline: 20px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
 }
 
 .top-menu__links a:hover, .top-menu__links a:focus, .top-menu__links a:active,
@@ -168,25 +173,23 @@ body.has-main-menu #header { padding-block-end: 48px; }
 /* ---------------------------------------------------------------------------
    Navigation bar (#main-menu: Overview / Activity / Issues / …)
 
-   Height: 42px. Kept as 2px top padding (still 0 bottom — see below)
-   + 40px content.
+   Height: 48px, all of it tab — no padding above or below.
 
-   The open item keeps the bar's own background (no highlight), text goes
-   white, and the marker line beneath it is --color-current-marker, at twice
-   the original thickness (4px), flush with the bar's true bottom edge.
+   The open item works like core's: a white tab (the same white as #content
+   below it, so the tab reads as part of the page) and text in --athena-link,
+   but with no marker line.
    Unselected, unhovered items are --athena-navbar-text; hover keeps the
    bar's own background and turns the text white.
    ------------------------------------------------------------------------ */
 #main-menu { background: var(--athena-navbar-bg); }
 
-/* Core's own bottom padding was a gap an inset box-shadow on a tab can never
-   cross — inset shadows clip to the element's own box, they can't bleed into
-   a parent's padding. Moving that padding to the top and stretching each tab
-   (align-items: stretch, was center) to the bar's full height puts a tab's
-   bottom edge exactly on the bar's true bottom edge, so the marker below can
-   be flush without any pseudo-element tricks. */
-#main-menu { padding-block: 2px 0; }
-#main-menu ul { min-block-size: 46px; align-items: stretch; } /* 48px total: 2px top padding + 46px */
+/* Core pads the bar 2px top and bottom, which would show as a dark band
+   between the white tab and the edges of the bar. So no padding at all, and
+   each tab is stretched (align-items: stretch, was center) to the bar's full
+   height: the white runs from the bar's top edge to its bottom edge, where
+   it meets #content. */
+#main-menu { padding-block: 0; }
+#main-menu ul { min-block-size: 48px; align-items: stretch; } /* must equal #header's padding-block-end */
 
 #main-menu li a {
   color: var(--athena-navbar-text);
@@ -211,9 +214,9 @@ body.has-main-menu #header { padding-block-end: 48px; }
 }
 
 #main-menu li a.selected, #main-menu li a.selected:hover {
-  background-color: transparent;
-  color: var(--oc-white);
-  box-shadow: inset 0 -5px 0 var(--color-current-marker);
+  background-color: var(--oc-white);
+  color: var(--athena-link);
+  box-shadow: none; /* no marker; `none`, not omitted, or core's own 2px bottom marker comes back */
 }
 
 /* ---------------------------------------------------------------------------
